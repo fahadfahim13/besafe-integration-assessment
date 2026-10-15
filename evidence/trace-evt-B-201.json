@@ -1,0 +1,145 @@
+{
+  "source_event": {
+    "id": 1,
+    "event_id": "evt-B-201",
+    "dedupe_key": "b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-20T00:02:00Z",
+    "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+    "event_edit_date": "2026-10-20T00:02:00Z",
+    "received_at": "2026-10-20T00:03:00Z",
+    "outcome": "applied",
+    "detail": "status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10-21T00:40:00Z; outbox confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:02:00Z"
+  },
+  "duplicates_rejected": [
+    {
+      "id": 3,
+      "event_id": "evt-B-201-redelivery",
+      "dedupe_key": "b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-20T00:02:00Z",
+      "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+      "event_edit_date": "2026-10-20T00:02:00Z",
+      "received_at": "2026-10-20T00:05:00Z",
+      "outcome": "duplicate",
+      "detail": "already applied; ServiceM8 version and content match the store"
+    }
+  ],
+  "stored_job_now": {
+    "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+    "job_number": "1042",
+    "customer_id": 1,
+    "property": "7 Ridge Rd, Dee Why NSW",
+    "status": "Cancelled",
+    "start_at": "2026-10-21T00:40:00Z",
+    "sm8_edit_date": "2026-10-20T01:00:00Z",
+    "content_hash": "ca12ae96d6c5ea33",
+    "ghl_opportunity_id": "ghl_opp_0003",
+    "updated_at": "2026-10-20T01:01:00Z"
+  },
+  "outbox_row": {
+    "id": 1,
+    "idempotency_key": "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:02:00Z",
+    "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+    "kind": "booking_confirmation",
+    "contact_id": "ghl_contact_0001",
+    "body": "BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is confirmed for Wed 21 Oct 00:40 UTC. Reply to this number to change it.",
+    "confirms_start_at": "2026-10-21T00:40:00Z",
+    "status": "sent",
+    "sends": 1,
+    "lease_owner": null,
+    "lease_until": null,
+    "fencing_token": 4,
+    "first_send_at": "2026-10-20T00:06:00Z",
+    "resend_eligible_at": "2026-10-20T00:21:00Z",
+    "next_check_at": "2026-10-20T00:12:00Z",
+    "provider_message_id": "ghl_msg_0004",
+    "resolution": "reconciled from provider search (1 match)",
+    "created_at": "2026-10-20T00:03:00Z",
+    "updated_at": "2026-10-20T00:22:00Z"
+  },
+  "attempts": [
+    {
+      "worker": "W1",
+      "fencing_token": 1,
+      "at": "2026-10-20T00:06:00Z",
+      "step": "claim",
+      "result": "lease until 2026-10-20T00:07:00Z (status pending)"
+    },
+    {
+      "worker": "W1",
+      "fencing_token": 1,
+      "at": "2026-10-20T00:06:00Z",
+      "step": "send_start",
+      "result": "send #1 -> GHL (ServiceM8 confirms job and start time)"
+    },
+    {
+      "worker": "W1",
+      "fencing_token": 1,
+      "at": "2026-10-20T00:06:00Z",
+      "step": "crash",
+      "result": "process died handling timeout: POST /conversations/messages: read timeout after 30s (request was accepted)"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 2,
+      "at": "2026-10-20T00:08:00Z",
+      "step": "claim",
+      "result": "lease until 2026-10-20T00:09:00Z (status in_flight)"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 2,
+      "at": "2026-10-20T00:08:00Z",
+      "step": "recover",
+      "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 2,
+      "at": "2026-10-20T00:08:00Z",
+      "step": "hold",
+      "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:10:00Z"
+    },
+    {
+      "worker": "W3",
+      "fencing_token": 3,
+      "at": "2026-10-20T00:10:00Z",
+      "step": "claim",
+      "result": "lease until 2026-10-20T00:11:00Z (status uncertain)"
+    },
+    {
+      "worker": "W3",
+      "fencing_token": 3,
+      "at": "2026-10-20T00:10:00Z",
+      "step": "hold",
+      "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:12:00Z"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 2,
+      "at": "2026-10-20T00:10:00Z",
+      "step": "write_rejected",
+      "result": "token 2 is stale; current token 3"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 4,
+      "at": "2026-10-20T00:22:00Z",
+      "step": "claim",
+      "result": "lease until 2026-10-20T00:23:00Z (status uncertain)"
+    },
+    {
+      "worker": "W2",
+      "fencing_token": 4,
+      "at": "2026-10-20T00:22:00Z",
+      "step": "reconcile",
+      "result": "search FOUND ['ghl_msg_0004'] -> sent, no resend"
+    }
+  ],
+  "destination": {
+    "ghl_message": {
+      "id": "ghl_msg_0004",
+      "contact_id": "ghl_contact_0001",
+      "body": "BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is confirmed for Wed 21 Oct 00:40 UTC. Reply to this number to change it.",
+      "created_at": "2026-10-20T00:06:00Z"
+    },
+    "ghl_messages_for_body": 1
+  }
+}

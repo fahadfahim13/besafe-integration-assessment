@@ -1,0 +1,496 @@
+BeSafe integration assessment - synthetic run
+All data is synthetic. ServiceM8, GHL, Outlook and the AI model are simulated providers.
+
+TIMELINE
+  [2026-10-20T00:03:00Z] evt-B-201 reschedule (edit_date 2026-10-20T00:02:00Z): applied
+  [2026-10-20T00:04:00Z] evt-B-200 older update arriving late (edit_date 2026-10-20T00:01:00Z): stale
+  [2026-10-20T00:05:00Z] evt-B-201 duplicate delivery: duplicate
+  [2026-10-20T00:06:00Z] W1 sends confirmation; GHL accepts but times out; W1 crashes: CRASHED: W1 died after GHL timeout, outcome not saved
+  [2026-10-20T00:08:00Z] W2 and W3 race for the expired lease: {'W2': 'WON token=2', 'W3': 'lost (lease held)'}
+  [2026-10-20T00:08:00Z] W2 recovers: provider search: held
+  [2026-10-20T00:09:00Z] W3 polls at 00:09 (inside backoff): nothing claimable
+  [2026-10-20T00:10:00Z] second recovery pass at 00:10 (search still inside lag): held token=3
+  [2026-10-20T00:10:00Z] W2 (paused since 00:08) wakes late and writes with token 2: REJECTED: W2 write refused: token 2 is stale; current token 3
+  [2026-10-20T00:20:00Z] mailbox delta sync before outage: watermark 00:20
+  [2026-10-20T00:20:00Z] OUTAGE starts: Graph notifications and poller down
+  [2026-10-20T00:22:00Z] recovery after search catches up: reconciled token=4
+  [2026-10-20T00:25:00Z] customer reply lands in shared mailbox: AAMk_in_003; notification DROPPED
+  [2026-10-20T00:41:00Z] follow-up dispatcher tick (reminder #1042 due 00:40): [(3, 'held: mailbox stale')]
+  [2026-10-20T00:46:00Z] follow-up dispatcher tick (reminder #1041 due 00:45): [(1, 'held: mailbox stale'), (3, 'held: mailbox stale')]
+  [2026-10-20T00:55:00Z] OUTAGE ends; delta poll: recovered ['AAMk_in_003']
+  [2026-10-20T00:55:00Z] follow-up dispatcher tick (mailbox fresh, reply not yet processed): [(1, 'held: unprocessed reply'), (3, 'held: unprocessed reply')]
+  [2026-10-20T00:56:00Z] process inbound reply (AI + validation): [{'graph_id': 'AAMk_in_003', 'verdict': 'rejected', 'reasons': ["contradiction: text says 'keep the other' but extraction cancels every job", "count: 'that one' implies exactly 1 cancellation, extraction has 2", 'policy: cancellation is destructive -> human approval required'], 'suggestion': {'cancel': ['b2e1d4f3-1042-4c7f-8d22-0000000b1042'], 'keep': ['a1f0c3e2-1041-4b6e-9c11-0000000a1041'], 'basis': "In-Reply-To <booking-1042@besafe.example> is the booking email for job 1042; 'keep the other' -> job 1041"}}]
+  [2026-10-20T00:56:00Z] follow-up dispatcher tick (after reply processed): nothing dispatched
+  [2026-10-20T00:56:00Z] duplicate-delivery sweep: none
+  [2026-10-20T01:00:00Z] reviewer approves: cancel #1042, keep #1041: ServiceM8 write issued
+  [2026-10-20T01:01:00Z] evt-B-202 cancellation webhook: applied
+  [2026-10-20T01:02:00Z] follow-up dispatcher tick (after review): [(1, 'dispatched to outbox')]
+  [2026-10-20T01:02:00Z] outbox worker delivers the #1041 reminder: sent token=1
+
+====================================================================================================
+SNAPSHOT: 1_before   (sim time 2026-10-20T00:00:00Z)
+====================================================================================================
+
+  ServiceM8 (destination, simulated)
+    job_number | status    | start_at             | edit_date           
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-22T03:00:00Z | 2026-10-20T00:00:00Z
+
+  Store: jobs
+    job_number | status    | start_at             | sm8_edit_date       
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-22T03:00:00Z | 2026-10-20T00:00:00Z
+
+  Store: inbound_events
+    (none)
+
+  Store: outbox
+    (none)
+
+  Store: followups
+    id | job_number | kind         | due_at               | status | reason
+    ---+------------+--------------+----------------------+--------+-------
+    1  | 1041       | reminder_24h | 2026-10-20T00:45:00Z | queued | None  
+    2  | 1042       | reminder_24h | 2026-10-21T03:00:00Z | queued | None  
+
+  Store: inbound_emails
+    (none)
+
+  Store: ai_extractions
+    (none)
+
+  Store: review_tasks
+    (none)
+
+  GHL opportunities (destination, simulated)
+    id           | name                               | stage    
+    -------------+------------------------------------+----------
+    ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+
+  GHL messages (destination, simulated)
+    (none)
+
+  Outlook dropped notifications
+    (none)
+
+====================================================================================================
+SNAPSHOT: 2_after_failures_delivery   (sim time 2026-10-20T00:06:00Z)
+====================================================================================================
+
+  ServiceM8 (destination, simulated)
+    job_number | status    | start_at             | edit_date           
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: jobs
+    job_number | status    | start_at             | sm8_edit_date       
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: inbound_events
+    event_id             | event_edit_date      | outcome   | detail                                                          
+    ---------------------+----------------------+-----------+-----------------------------------------------------------------
+    evt-B-201            | 2026-10-20T00:02:00Z | applied   | status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10
+    evt-B-200            | 2026-10-20T00:01:00Z | stale     | event edit_date 2026-10-20T00:01:00Z < stored 2026-10-20T00:02:0
+    evt-B-201-redelivery | 2026-10-20T00:02:00Z | duplicate | already applied; ServiceM8 version and content match the store  
+
+  Store: outbox
+    id | kind                 | status    | sends | fencing_token | lease_owner | resend_eligible_at   | provider_message_id | resolution
+    ---+----------------------+-----------+-------+---------------+-------------+----------------------+---------------------+-----------
+    1  | booking_confirmation | in_flight | 1     | 1             | W1          | 2026-10-20T00:21:00Z | None                | None      
+
+  Store: followups
+    id | job_number | kind         | due_at               | status    | reason     
+    ---+------------+--------------+----------------------+-----------+------------
+    1  | 1041       | reminder_24h | 2026-10-20T00:45:00Z | queued    | None       
+    2  | 1042       | reminder_24h | 2026-10-21T03:00:00Z | cancelled | rescheduled
+    3  | 1042       | reminder_24h | 2026-10-20T00:40:00Z | queued    | None       
+
+  Store: inbound_emails
+    (none)
+
+  Store: ai_extractions
+    (none)
+
+  Store: review_tasks
+    (none)
+
+  GHL opportunities (destination, simulated)
+    id           | name                               | stage    
+    -------------+------------------------------------+----------
+    ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+
+  GHL messages (destination, simulated)
+    id           | created_at           | body                                                            
+    -------------+----------------------+-----------------------------------------------------------------
+    ghl_msg_0004 | 2026-10-20T00:06:00Z | BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is
+
+  Outlook dropped notifications
+    (none)
+
+====================================================================================================
+SNAPSHOT: 3_after_failures_all   (sim time 2026-10-20T00:46:00Z)
+====================================================================================================
+
+  ServiceM8 (destination, simulated)
+    job_number | status    | start_at             | edit_date           
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: jobs
+    job_number | status    | start_at             | sm8_edit_date       
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: inbound_events
+    event_id             | event_edit_date      | outcome   | detail                                                          
+    ---------------------+----------------------+-----------+-----------------------------------------------------------------
+    evt-B-201            | 2026-10-20T00:02:00Z | applied   | status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10
+    evt-B-200            | 2026-10-20T00:01:00Z | stale     | event edit_date 2026-10-20T00:01:00Z < stored 2026-10-20T00:02:0
+    evt-B-201-redelivery | 2026-10-20T00:02:00Z | duplicate | already applied; ServiceM8 version and content match the store  
+
+  Store: outbox
+    id | kind                 | status | sends | fencing_token | lease_owner | resend_eligible_at   | provider_message_id | resolution                               
+    ---+----------------------+--------+-------+---------------+-------------+----------------------+---------------------+------------------------------------------
+    1  | booking_confirmation | sent   | 1     | 4             | None        | 2026-10-20T00:21:00Z | ghl_msg_0004        | reconciled from provider search (1 match)
+
+  Store: followups
+    id | job_number | kind         | due_at               | status    | reason     
+    ---+------------+--------------+----------------------+-----------+------------
+    1  | 1041       | reminder_24h | 2026-10-20T00:45:00Z | queued    | None       
+    2  | 1042       | reminder_24h | 2026-10-21T03:00:00Z | cancelled | rescheduled
+    3  | 1042       | reminder_24h | 2026-10-20T00:40:00Z | queued    | None       
+
+  Store: inbound_emails
+    (none)
+
+  Store: ai_extractions
+    (none)
+
+  Store: review_tasks
+    (none)
+
+  GHL opportunities (destination, simulated)
+    id           | name                               | stage    
+    -------------+------------------------------------+----------
+    ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+
+  GHL messages (destination, simulated)
+    id           | created_at           | body                                                            
+    -------------+----------------------+-----------------------------------------------------------------
+    ghl_msg_0004 | 2026-10-20T00:06:00Z | BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is
+
+  Outlook dropped notifications
+    graph_id    | at                  
+    ------------+---------------------
+    AAMk_in_003 | 2026-10-20T00:25:00Z
+
+====================================================================================================
+SNAPSHOT: 4_after_automated_recovery   (sim time 2026-10-20T00:56:00Z)
+====================================================================================================
+
+  ServiceM8 (destination, simulated)
+    job_number | status    | start_at             | edit_date           
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: jobs
+    job_number | status    | start_at             | sm8_edit_date       
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Scheduled | 2026-10-21T00:40:00Z | 2026-10-20T00:02:00Z
+
+  Store: inbound_events
+    event_id             | event_edit_date      | outcome   | detail                                                          
+    ---------------------+----------------------+-----------+-----------------------------------------------------------------
+    evt-B-201            | 2026-10-20T00:02:00Z | applied   | status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10
+    evt-B-200            | 2026-10-20T00:01:00Z | stale     | event edit_date 2026-10-20T00:01:00Z < stored 2026-10-20T00:02:0
+    evt-B-201-redelivery | 2026-10-20T00:02:00Z | duplicate | already applied; ServiceM8 version and content match the store  
+
+  Store: outbox
+    id | kind                 | status | sends | fencing_token | lease_owner | resend_eligible_at   | provider_message_id | resolution                               
+    ---+----------------------+--------+-------+---------------+-------------+----------------------+---------------------+------------------------------------------
+    1  | booking_confirmation | sent   | 1     | 4             | None        | 2026-10-20T00:21:00Z | ghl_msg_0004        | reconciled from provider search (1 match)
+
+  Store: followups
+    id | job_number | kind         | due_at               | status    | reason                                    
+    ---+------------+--------------+----------------------+-----------+-------------------------------------------
+    1  | 1041       | reminder_24h | 2026-10-20T00:45:00Z | paused    | customer reply AAMk_in_003 awaiting review
+    2  | 1042       | reminder_24h | 2026-10-21T03:00:00Z | cancelled | rescheduled                               
+    3  | 1042       | reminder_24h | 2026-10-20T00:40:00Z | paused    | customer reply AAMk_in_003 awaiting review
+
+  Store: inbound_emails
+    graph_id    | in_reply_to                   | ingested_via | status         
+    ------------+-------------------------------+--------------+----------------
+    AAMk_in_003 | <booking-1042@besafe.example> | delta        | awaiting_review
+
+  Store: ai_extractions
+    graph_id    | confidence | validation
+    ------------+------------+-----------
+    AAMk_in_003 | 0.96       | rejected  
+
+  Store: review_tasks
+    id | kind                 | status | resolution | resolved_by
+    ---+----------------------+--------+------------+------------
+    1  | customer_instruction | open   | None       | None       
+
+  GHL opportunities (destination, simulated)
+    id           | name                               | stage    
+    -------------+------------------------------------+----------
+    ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+
+  GHL messages (destination, simulated)
+    id           | created_at           | body                                                            
+    -------------+----------------------+-----------------------------------------------------------------
+    ghl_msg_0004 | 2026-10-20T00:06:00Z | BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is
+
+  Outlook dropped notifications
+    graph_id    | at                  
+    ------------+---------------------
+    AAMk_in_003 | 2026-10-20T00:25:00Z
+
+====================================================================================================
+SNAPSHOT: 5_after_human_review   (sim time 2026-10-20T01:02:00Z)
+====================================================================================================
+
+  ServiceM8 (destination, simulated)
+    job_number | status    | start_at             | edit_date           
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Cancelled | 2026-10-21T00:40:00Z | 2026-10-20T01:00:00Z
+
+  Store: jobs
+    job_number | status    | start_at             | sm8_edit_date       
+    -----------+-----------+----------------------+---------------------
+    1041       | Scheduled | 2026-10-21T00:45:00Z | 2026-10-20T00:00:00Z
+    1042       | Cancelled | 2026-10-21T00:40:00Z | 2026-10-20T01:00:00Z
+
+  Store: inbound_events
+    event_id             | event_edit_date      | outcome   | detail                                                          
+    ---------------------+----------------------+-----------+-----------------------------------------------------------------
+    evt-B-201            | 2026-10-20T00:02:00Z | applied   | status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10
+    evt-B-200            | 2026-10-20T00:01:00Z | stale     | event edit_date 2026-10-20T00:01:00Z < stored 2026-10-20T00:02:0
+    evt-B-201-redelivery | 2026-10-20T00:02:00Z | duplicate | already applied; ServiceM8 version and content match the store  
+    evt-B-202            | 2026-10-20T01:00:00Z | applied   | status Scheduled->Cancelled; pending messages superseded, follow
+
+  Store: outbox
+    id | kind                 | status | sends | fencing_token | lease_owner | resend_eligible_at   | provider_message_id | resolution                                 
+    ---+----------------------+--------+-------+---------------+-------------+----------------------+---------------------+--------------------------------------------
+    1  | booking_confirmation | sent   | 1     | 4             | None        | 2026-10-20T00:21:00Z | ghl_msg_0004        | reconciled from provider search (1 match)  
+    2  | reminder             | sent   | 1     | 1             | None        | 2026-10-20T01:17:00Z | ghl_msg_0005        | delivered: GHL response received on send #1
+
+  Store: followups
+    id | job_number | kind         | due_at               | status     | reason              
+    ---+------------+--------------+----------------------+------------+---------------------
+    1  | 1041       | reminder_24h | 2026-10-20T00:45:00Z | dispatched | resumed after review
+    2  | 1042       | reminder_24h | 2026-10-21T03:00:00Z | cancelled  | rescheduled         
+    3  | 1042       | reminder_24h | 2026-10-20T00:40:00Z | cancelled  | job cancelled       
+
+  Store: inbound_emails
+    graph_id    | in_reply_to                   | ingested_via | status  
+    ------------+-------------------------------+--------------+---------
+    AAMk_in_003 | <booking-1042@besafe.example> | delta        | resolved
+
+  Store: ai_extractions
+    graph_id    | confidence | validation
+    ------------+------------+-----------
+    AAMk_in_003 | 0.96       | rejected  
+
+  Store: review_tasks
+    id | kind                 | status   | resolution                                                       | resolved_by        
+    ---+----------------------+----------+------------------------------------------------------------------+--------------------
+    1  | customer_instruction | resolved | {"cancel": ["b2e1d4f3-1042-4c7f-8d22-0000000b1042"], "keep": ["a | ops.reviewer@besafe
+
+  GHL opportunities (destination, simulated)
+    id           | name                               | stage    
+    -------------+------------------------------------+----------
+    ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+
+  GHL messages (destination, simulated)
+    id           | created_at           | body                                                            
+    -------------+----------------------+-----------------------------------------------------------------
+    ghl_msg_0004 | 2026-10-20T00:06:00Z | BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is
+    ghl_msg_0005 | 2026-10-20T01:02:00Z | BeSafe reminder: job #1041 at 12 Harbour St, Manly NSW is tomorr
+
+  Outlook dropped notifications
+    graph_id    | at                  
+    ------------+---------------------
+    AAMk_in_003 | 2026-10-20T00:25:00Z
+
+====================================================================================================
+TRACE: evt-B-201 (job #1042 reschedule) from source event to destination
+====================================================================================================
+  source event   : evt-B-201  job=b2e1d4f3-1042-4c7f-8d22-0000000b1042  edit_date=2026-10-20T00:02:00Z
+  dedupe key     : b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-20T00:02:00Z  -> outcome=applied (status Scheduled->Scheduled; start 2026-10-22T03:00:00Z->2026-10-21T00:40:00Z; outbox confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:02:00Z)
+  duplicate      : evt-B-201-redelivery at 2026-10-20T00:05:00Z -> no-op (already applied; ServiceM8 version and content match the store)
+  outbox         : id=1 key=confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:02:00Z
+                   status=sent sends=1 fencing_token=4
+  attempt        : 2026-10-20T00:06:00Z W1  token=1 claim            lease until 2026-10-20T00:07:00Z (status pending)
+  attempt        : 2026-10-20T00:06:00Z W1  token=1 send_start       send #1 -> GHL (ServiceM8 confirms job and start time)
+  attempt        : 2026-10-20T00:06:00Z W1  token=1 crash            process died handling timeout: POST /conversations/messages: read timeout after 30s (request was accepted)
+  attempt        : 2026-10-20T00:08:00Z W2  token=2 claim            lease until 2026-10-20T00:09:00Z (status in_flight)
+  attempt        : 2026-10-20T00:08:00Z W2  token=2 recover          found in_flight with expired lease: previous worker died; outcome unknown -> uncertain
+  attempt        : 2026-10-20T00:08:00Z W2  token=2 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:10:00Z
+  attempt        : 2026-10-20T00:10:00Z W3  token=3 claim            lease until 2026-10-20T00:11:00Z (status uncertain)
+  attempt        : 2026-10-20T00:10:00Z W3  token=3 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:12:00Z
+  attempt        : 2026-10-20T00:10:00Z W2  token=2 write_rejected   token 2 is stale; current token 3
+  attempt        : 2026-10-20T00:22:00Z W2  token=4 claim            lease until 2026-10-20T00:23:00Z (status uncertain)
+  attempt        : 2026-10-20T00:22:00Z W2  token=4 reconcile        search FOUND ['ghl_msg_0004'] -> sent, no resend
+  destination    : GHL ghl_msg_0004 at 2026-10-20T00:06:00Z (messages with this body: 1)
+
+====================================================================================================
+VARIANTS: crash immediately before / after the external write, provider lag beyond window
+====================================================================================================
+
+  V1 crash immediately BEFORE external write
+    T+2 send               CRASHED: W1 died before GHL request
+    T+4 recover            held (token 2)
+    T+18 recover           sent (token 3)
+    T+45 recover           nothing to claim
+    T+50 duplicate sweep   none
+    -> outbox status=sent sends=2 resolution=delivered: GHL response received on send #2; GHL messages delivered=1
+
+  V2 crash immediately AFTER external write
+    T+2 send               CRASHED: W1 died after GHL accepted the request
+    T+4 recover            held (token 2)
+    T+18 recover           reconciled (token 3)
+    T+45 recover           nothing to claim
+    T+50 duplicate sweep   none
+    -> outbox status=sent sends=1 resolution=reconciled from provider search (1 match); GHL messages delivered=1
+
+  V3 provider search lag (30m) exceeds window (15m)
+    T+2 send               CRASHED: W1 died after GHL accepted the request
+    T+4 recover            held (token 2)
+    T+18 recover           sent (token 3)
+    T+45 recover           nothing to claim
+    T+50 duplicate sweep   ['confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z']
+    -> outbox status=sent sends=2 resolution=delivered: GHL response received on send #2; GHL messages delivered=2
+    -> REVIEW TASK duplicate_delivered (open): {
+ "outbox_id": 1,
+ "provider_message_ids": [
+  "ghl_msg_0004",
+  "ghl_msg_0005"
+ ],
+ "created_at": [
+  "2026-10-20T00:02:00Z",
+  "2026-10-20T00:18:00Z"
+ ],
+ "attempts": [
+  {
+   "worker": "W1",
+   "fencing_token": 1,
+   "at": "2026-10-20T00:02:00Z",
+   "step": "claim",
+   "result": "lease until 2026-10-20T00:03:00Z (status pending)"
+  },
+  {
+   "worker": "W1",
+   "fencing_token": 1,
+   "at": "2026-10-20T00:02:00Z",
+   "step": "send_start",
+   "result": "send #1 -> GHL (ServiceM8 confirms job and start time)"
+  },
+  {
+   "worker": "W1",
+   "fencing_token": 1,
+   "at": "2026-10-20T00:02:00Z",
+   "step": "crash",
+   "result": "process died after GHL accepted, before save"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 2,
+   "at": "2026-10-20T00:04:00Z",
+   "step": "claim",
+   "result": "lease until 2026-10-20T00:05:00Z (status in_flight)"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 2,
+   "at": "2026-10-20T00:04:00Z",
+   "step": "recover",
+   "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 2,
+   "at": "2026-10-20T00:04:00Z",
+   "step": "hold",
+   "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:17:00Z; next check 2026-10-20T00:06:00Z"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 3,
+   "at": "2026-10-20T00:18:00Z",
+   "step": "claim",
+   "result": "lease until 2026-10-20T00:19:00Z (status uncertain)"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 3,
+   "at": "2026-10-20T00:18:00Z",
+   "step": "resend_permitted",
+   "result": "search started 2026-10-20T00:18:00Z >= window end 2026-10-20T00:17:00Z found nothing; lease valid; ServiceM8 confirms job and start time; sends=1<2"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 3,
+   "at": "2026-10-20T00:18:00Z",
+   "step": "send_start",
+   "result": "send #2 -> GHL (ServiceM8 confirms job and start time)"
+  },
+  {
+   "worker": "W2",
+   "fencing_token": 3,
+   "at": "2026-10-20T00:18:00Z",
+   "step": "send_result",
+   "result": "OK ghl_msg_0005"
+  }
+ ]
+}
+
+  V4 same reply with NO thread reference
+    suggestion: AMBIGUOUS: no thread reference; ask the customer which property
+    follow-ups paused: 2; ServiceM8 writes: 0
+
+  V5 eight workers claim the same row simultaneously, 20 rounds
+    winners per round: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+====================================================================================================
+RESULTS
+====================================================================================================
+   1. PASS  Job matching: 1 contact, 2 opportunities
+   2. PASS  Reschedule applied: applied
+   3. PASS  Stale update: stale
+   4. PASS  Duplicate event: duplicate
+   5. PASS  Simultaneous workers: {'W2': 'WON token=2', 'W3': 'lost (lease held)'}
+   6. PASS  Stress: 20/20 rounds
+   7. PASS  Fencing: REJECTED
+   8. PASS  Uncertain delivery: 1 confirmation delivered, outbox sends=1
+   9. PASS  Resend condition: V1 delivered=1
+  10. PASS  Crash after write: V2 delivered=1
+  11. PASS  Missed Outlook reply: delta
+  12. PASS  Follow-up control (outage): [[(3, 'held: mailbox stale')], [(1, 'held: mailbox stale'), (3, 'held: mailbox stale')]]
+  13. PASS  Follow-up control (unprocessed reply): [(1, 'held: unprocessed reply'), (3, 'held: unprocessed reply')]
+  14. PASS  Follow-up control (reply): ['1041', '1042']
+  15. PASS  AI validation: confidence 0.96 -> rejected
+  16. PASS  Human review: ['Scheduled', 'Scheduled']
+  17. PASS  Ambiguity: AMBIGUOUS: no thread reference; ask the 
+  18. PASS  Destination: ServiceM8: Scheduled / Cancelled
+  19. PASS  Destination: GHL: 1 conf, 1 reminder (#1041)
+  20. PASS  Unresolvable case: V3 delivered=2, reviews=['duplicate_delivered']
+
+  20/20 checks passed
+  Main scenario open review tasks after human review: 0

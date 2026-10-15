@@ -1,0 +1,713 @@
+{
+  "variants": {
+    "V1 crash immediately BEFORE external write": {
+      "steps": [
+        [
+          "T+2 send",
+          "CRASHED: W1 died before GHL request"
+        ],
+        [
+          "T+4 recover",
+          "held (token 2)"
+        ],
+        [
+          "T+18 recover",
+          "sent (token 3)"
+        ],
+        [
+          "T+45 recover",
+          "nothing to claim"
+        ],
+        [
+          "T+50 duplicate sweep",
+          "none"
+        ]
+      ],
+      "outbox": {
+        "id": 1,
+        "idempotency_key": "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z",
+        "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+        "kind": "booking_confirmation",
+        "contact_id": "ghl_contact_0001",
+        "body": "BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is confirmed for Wed 21 Oct 00:40 UTC. Reply to this number to change it.",
+        "confirms_start_at": "2026-10-21T00:40:00Z",
+        "status": "sent",
+        "sends": 2,
+        "lease_owner": null,
+        "lease_until": null,
+        "fencing_token": 3,
+        "first_send_at": "2026-10-20T00:02:00Z",
+        "resend_eligible_at": "2026-10-20T00:33:00Z",
+        "next_check_at": "2026-10-20T00:06:00Z",
+        "provider_message_id": "ghl_msg_0004",
+        "resolution": "delivered: GHL response received on send #2",
+        "created_at": "2026-10-20T00:01:00Z",
+        "updated_at": "2026-10-20T00:18:00Z"
+      },
+      "ghl_messages": 1,
+      "reviews": [],
+      "attempts": [
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:03:00Z (status pending)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "send_start",
+          "result": "send #1 -> GHL (ServiceM8 confirms job and start time)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "crash",
+          "result": "process died before the GHL request"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:05:00Z (status in_flight)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "recover",
+          "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "hold",
+          "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:17:00Z; next check 2026-10-20T00:06:00Z"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:19:00Z (status uncertain)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "resend_permitted",
+          "result": "search started 2026-10-20T00:18:00Z >= window end 2026-10-20T00:17:00Z found nothing; lease valid; ServiceM8 confirms job and start time; sends=1<2"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "send_start",
+          "result": "send #2 -> GHL (ServiceM8 confirms job and start time)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "send_result",
+          "result": "OK ghl_msg_0004"
+        }
+      ]
+    },
+    "V2 crash immediately AFTER external write": {
+      "steps": [
+        [
+          "T+2 send",
+          "CRASHED: W1 died after GHL accepted the request"
+        ],
+        [
+          "T+4 recover",
+          "held (token 2)"
+        ],
+        [
+          "T+18 recover",
+          "reconciled (token 3)"
+        ],
+        [
+          "T+45 recover",
+          "nothing to claim"
+        ],
+        [
+          "T+50 duplicate sweep",
+          "none"
+        ]
+      ],
+      "outbox": {
+        "id": 1,
+        "idempotency_key": "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z",
+        "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+        "kind": "booking_confirmation",
+        "contact_id": "ghl_contact_0001",
+        "body": "BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is confirmed for Wed 21 Oct 00:40 UTC. Reply to this number to change it.",
+        "confirms_start_at": "2026-10-21T00:40:00Z",
+        "status": "sent",
+        "sends": 1,
+        "lease_owner": null,
+        "lease_until": null,
+        "fencing_token": 3,
+        "first_send_at": "2026-10-20T00:02:00Z",
+        "resend_eligible_at": "2026-10-20T00:17:00Z",
+        "next_check_at": "2026-10-20T00:06:00Z",
+        "provider_message_id": "ghl_msg_0004",
+        "resolution": "reconciled from provider search (1 match)",
+        "created_at": "2026-10-20T00:01:00Z",
+        "updated_at": "2026-10-20T00:18:00Z"
+      },
+      "ghl_messages": 1,
+      "reviews": [],
+      "attempts": [
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:03:00Z (status pending)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "send_start",
+          "result": "send #1 -> GHL (ServiceM8 confirms job and start time)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "crash",
+          "result": "process died after GHL accepted, before save"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:05:00Z (status in_flight)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "recover",
+          "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "hold",
+          "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:17:00Z; next check 2026-10-20T00:06:00Z"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:19:00Z (status uncertain)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "reconcile",
+          "result": "search FOUND ['ghl_msg_0004'] -> sent, no resend"
+        }
+      ]
+    },
+    "V3 provider search lag (30m) exceeds window (15m)": {
+      "steps": [
+        [
+          "T+2 send",
+          "CRASHED: W1 died after GHL accepted the request"
+        ],
+        [
+          "T+4 recover",
+          "held (token 2)"
+        ],
+        [
+          "T+18 recover",
+          "sent (token 3)"
+        ],
+        [
+          "T+45 recover",
+          "nothing to claim"
+        ],
+        [
+          "T+50 duplicate sweep",
+          [
+            "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z"
+          ]
+        ]
+      ],
+      "outbox": {
+        "id": 1,
+        "idempotency_key": "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z",
+        "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+        "kind": "booking_confirmation",
+        "contact_id": "ghl_contact_0001",
+        "body": "BeSafe: your booking for job #1042 at 7 Ridge Rd, Dee Why NSW is confirmed for Wed 21 Oct 00:40 UTC. Reply to this number to change it.",
+        "confirms_start_at": "2026-10-21T00:40:00Z",
+        "status": "sent",
+        "sends": 2,
+        "lease_owner": null,
+        "lease_until": null,
+        "fencing_token": 3,
+        "first_send_at": "2026-10-20T00:02:00Z",
+        "resend_eligible_at": "2026-10-20T00:33:00Z",
+        "next_check_at": "2026-10-20T00:06:00Z",
+        "provider_message_id": "ghl_msg_0005",
+        "resolution": "delivered: GHL response received on send #2",
+        "created_at": "2026-10-20T00:01:00Z",
+        "updated_at": "2026-10-20T00:18:00Z"
+      },
+      "ghl_messages": 2,
+      "reviews": [
+        {
+          "kind": "duplicate_delivered",
+          "subject": "confirm:b2e1d4f3-1042-4c7f-8d22-0000000b1042:2026-10-21T00:40:00Z:v2026-10-20T00:01:00Z",
+          "evidence": "{\n \"outbox_id\": 1,\n \"provider_message_ids\": [\n  \"ghl_msg_0004\",\n  \"ghl_msg_0005\"\n ],\n \"created_at\": [\n  \"2026-10-20T00:02:00Z\",\n  \"2026-10-20T00:18:00Z\"\n ],\n \"attempts\": [\n  {\n   \"worker\": \"W1\",\n   \"fencing_token\": 1,\n   \"at\": \"2026-10-20T00:02:00Z\",\n   \"step\": \"claim\",\n   \"result\": \"lease until 2026-10-20T00:03:00Z (status pending)\"\n  },\n  {\n   \"worker\": \"W1\",\n   \"fencing_token\": 1,\n   \"at\": \"2026-10-20T00:02:00Z\",\n   \"step\": \"send_start\",\n   \"result\": \"send #1 -> GHL (ServiceM8 confirms job and start time)\"\n  },\n  {\n   \"worker\": \"W1\",\n   \"fencing_token\": 1,\n   \"at\": \"2026-10-20T00:02:00Z\",\n   \"step\": \"crash\",\n   \"result\": \"process died after GHL accepted, before save\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 2,\n   \"at\": \"2026-10-20T00:04:00Z\",\n   \"step\": \"claim\",\n   \"result\": \"lease until 2026-10-20T00:05:00Z (status in_flight)\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 2,\n   \"at\": \"2026-10-20T00:04:00Z\",\n   \"step\": \"recover\",\n   \"result\": \"found in_flight with expired lease: previous worker died; outcome unknown -> uncertain\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 2,\n   \"at\": \"2026-10-20T00:04:00Z\",\n   \"step\": \"hold\",\n   \"result\": \"search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:17:00Z; next check 2026-10-20T00:06:00Z\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 3,\n   \"at\": \"2026-10-20T00:18:00Z\",\n   \"step\": \"claim\",\n   \"result\": \"lease until 2026-10-20T00:19:00Z (status uncertain)\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 3,\n   \"at\": \"2026-10-20T00:18:00Z\",\n   \"step\": \"resend_permitted\",\n   \"result\": \"search started 2026-10-20T00:18:00Z >= window end 2026-10-20T00:17:00Z found nothing; lease valid; ServiceM8 confirms job and start time; sends=1<2\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 3,\n   \"at\": \"2026-10-20T00:18:00Z\",\n   \"step\": \"send_start\",\n   \"result\": \"send #2 -> GHL (ServiceM8 confirms job and start time)\"\n  },\n  {\n   \"worker\": \"W2\",\n   \"fencing_token\": 3,\n   \"at\": \"2026-10-20T00:18:00Z\",\n   \"step\": \"send_result\",\n   \"result\": \"OK ghl_msg_0005\"\n  }\n ]\n}",
+          "status": "open"
+        }
+      ],
+      "attempts": [
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:03:00Z (status pending)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "send_start",
+          "result": "send #1 -> GHL (ServiceM8 confirms job and start time)"
+        },
+        {
+          "worker": "W1",
+          "fencing_token": 1,
+          "at": "2026-10-20T00:02:00Z",
+          "step": "crash",
+          "result": "process died after GHL accepted, before save"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:05:00Z (status in_flight)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "recover",
+          "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 2,
+          "at": "2026-10-20T00:04:00Z",
+          "step": "hold",
+          "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:17:00Z; next check 2026-10-20T00:06:00Z"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "claim",
+          "result": "lease until 2026-10-20T00:19:00Z (status uncertain)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "resend_permitted",
+          "result": "search started 2026-10-20T00:18:00Z >= window end 2026-10-20T00:17:00Z found nothing; lease valid; ServiceM8 confirms job and start time; sends=1<2"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "send_start",
+          "result": "send #2 -> GHL (ServiceM8 confirms job and start time)"
+        },
+        {
+          "worker": "W2",
+          "fencing_token": 3,
+          "at": "2026-10-20T00:18:00Z",
+          "step": "send_result",
+          "result": "OK ghl_msg_0005"
+        }
+      ]
+    }
+  },
+  "ambiguous": {
+    "result": [
+      {
+        "graph_id": "AAMk_in_003",
+        "verdict": "rejected",
+        "reasons": [
+          "contradiction: text says 'keep the other' but extraction cancels every job",
+          "count: 'that one' implies exactly 1 cancellation, extraction has 2",
+          "policy: cancellation is destructive -> human approval required"
+        ],
+        "suggestion": null
+      }
+    ],
+    "task_evidence": {
+      "email": {
+        "from_addr": "jordan.lee@example.com",
+        "subject": "booking",
+        "body": "Cancel that one, keep the other.",
+        "in_reply_to": null,
+        "ingested_via": "webhook"
+      },
+      "candidates": [
+        {
+          "sm8_uuid": "a1f0c3e2-1041-4b6e-9c11-0000000a1041",
+          "job_number": "1041",
+          "property": "12 Harbour St, Manly NSW",
+          "status": "Scheduled",
+          "start_at": "2026-10-21T00:45:00Z"
+        },
+        {
+          "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+          "job_number": "1042",
+          "property": "7 Ridge Rd, Dee Why NSW",
+          "status": "Scheduled",
+          "start_at": "2026-10-22T03:00:00Z"
+        }
+      ],
+      "thread_match": null,
+      "ai": {
+        "raw": {
+          "intent": "cancel",
+          "actions": [
+            {
+              "job_number": "1041",
+              "action": "cancel"
+            },
+            {
+              "job_number": "1042",
+              "action": "cancel"
+            }
+          ],
+          "confidence": 0.96
+        },
+        "validation": "rejected",
+        "reasons": [
+          "contradiction: text says 'keep the other' but extraction cancels every job",
+          "count: 'that one' implies exactly 1 cancellation, extraction has 2",
+          "policy: cancellation is destructive -> human approval required"
+        ]
+      },
+      "suggestion": "AMBIGUOUS: no thread reference; ask the customer which property",
+      "policy": "Cancellation is destructive: human approval required regardless of AI confidence."
+    },
+    "paused": [
+      {
+        "sm8_uuid": "a1f0c3e2-1041-4b6e-9c11-0000000a1041",
+        "status": "paused"
+      },
+      {
+        "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
+        "status": "paused"
+      }
+    ],
+    "sm8_writes": []
+  },
+  "stress": [
+    {
+      "winners": [
+        "W2"
+      ],
+      "losers": [
+        "W8",
+        "W5",
+        "W3",
+        "W4",
+        "W6",
+        "W1",
+        "W7"
+      ]
+    },
+    {
+      "winners": [
+        "W7"
+      ],
+      "losers": [
+        "W3",
+        "W6",
+        "W4",
+        "W1",
+        "W2",
+        "W8",
+        "W5"
+      ]
+    },
+    {
+      "winners": [
+        "W4"
+      ],
+      "losers": [
+        "W6",
+        "W5",
+        "W2",
+        "W8",
+        "W3",
+        "W7",
+        "W1"
+      ]
+    },
+    {
+      "winners": [
+        "W4"
+      ],
+      "losers": [
+        "W8",
+        "W2",
+        "W3",
+        "W7",
+        "W1",
+        "W6",
+        "W5"
+      ]
+    },
+    {
+      "winners": [
+        "W2"
+      ],
+      "losers": [
+        "W4",
+        "W8",
+        "W1",
+        "W6",
+        "W5",
+        "W7",
+        "W3"
+      ]
+    },
+    {
+      "winners": [
+        "W5"
+      ],
+      "losers": [
+        "W6",
+        "W1",
+        "W3",
+        "W4",
+        "W8",
+        "W7",
+        "W2"
+      ]
+    },
+    {
+      "winners": [
+        "W4"
+      ],
+      "losers": [
+        "W8",
+        "W3",
+        "W1",
+        "W5",
+        "W7",
+        "W6",
+        "W2"
+      ]
+    },
+    {
+      "winners": [
+        "W7"
+      ],
+      "losers": [
+        "W2",
+        "W3",
+        "W4",
+        "W5",
+        "W8",
+        "W6",
+        "W1"
+      ]
+    },
+    {
+      "winners": [
+        "W1"
+      ],
+      "losers": [
+        "W5",
+        "W2",
+        "W7",
+        "W6",
+        "W3",
+        "W8",
+        "W4"
+      ]
+    },
+    {
+      "winners": [
+        "W2"
+      ],
+      "losers": [
+        "W8",
+        "W5",
+        "W6",
+        "W4",
+        "W3",
+        "W1",
+        "W7"
+      ]
+    },
+    {
+      "winners": [
+        "W5"
+      ],
+      "losers": [
+        "W8",
+        "W7",
+        "W4",
+        "W3",
+        "W6",
+        "W2",
+        "W1"
+      ]
+    },
+    {
+      "winners": [
+        "W6"
+      ],
+      "losers": [
+        "W7",
+        "W3",
+        "W5",
+        "W4",
+        "W8",
+        "W1",
+        "W2"
+      ]
+    },
+    {
+      "winners": [
+        "W2"
+      ],
+      "losers": [
+        "W1",
+        "W8",
+        "W4",
+        "W3",
+        "W7",
+        "W5",
+        "W6"
+      ]
+    },
+    {
+      "winners": [
+        "W8"
+      ],
+      "losers": [
+        "W3",
+        "W1",
+        "W2",
+        "W5",
+        "W4",
+        "W7",
+        "W6"
+      ]
+    },
+    {
+      "winners": [
+        "W6"
+      ],
+      "losers": [
+        "W2",
+        "W3",
+        "W7",
+        "W4",
+        "W8",
+        "W1",
+        "W5"
+      ]
+    },
+    {
+      "winners": [
+        "W6"
+      ],
+      "losers": [
+        "W1",
+        "W8",
+        "W3",
+        "W2",
+        "W5",
+        "W7",
+        "W4"
+      ]
+    },
+    {
+      "winners": [
+        "W3"
+      ],
+      "losers": [
+        "W4",
+        "W1",
+        "W7",
+        "W5",
+        "W8",
+        "W2",
+        "W6"
+      ]
+    },
+    {
+      "winners": [
+        "W4"
+      ],
+      "losers": [
+        "W8",
+        "W3",
+        "W1",
+        "W5",
+        "W7",
+        "W6",
+        "W2"
+      ]
+    },
+    {
+      "winners": [
+        "W5"
+      ],
+      "losers": [
+        "W4",
+        "W8",
+        "W1",
+        "W2",
+        "W6",
+        "W3",
+        "W7"
+      ]
+    },
+    {
+      "winners": [
+        "W7"
+      ],
+      "losers": [
+        "W1",
+        "W5",
+        "W4",
+        "W3",
+        "W6",
+        "W2",
+        "W8"
+      ]
+    }
+  ]
+}
