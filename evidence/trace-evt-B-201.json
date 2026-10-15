@@ -77,42 +77,42 @@
       "result": "process died handling timeout: POST /conversations/messages: read timeout after 30s (request was accepted)"
     },
     {
-      "worker": "W2",
+      "worker": "W3",
       "fencing_token": 2,
       "at": "2026-10-20T00:08:00Z",
       "step": "claim",
       "result": "lease until 2026-10-20T00:09:00Z (status in_flight)"
     },
     {
-      "worker": "W2",
+      "worker": "W3",
       "fencing_token": 2,
       "at": "2026-10-20T00:08:00Z",
       "step": "recover",
       "result": "found in_flight with expired lease: previous worker died; outcome unknown -> uncertain"
     },
     {
-      "worker": "W2",
+      "worker": "W3",
       "fencing_token": 2,
       "at": "2026-10-20T00:08:00Z",
       "step": "hold",
       "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:10:00Z"
     },
     {
-      "worker": "W3",
+      "worker": "W2",
       "fencing_token": 3,
       "at": "2026-10-20T00:10:00Z",
       "step": "claim",
       "result": "lease until 2026-10-20T00:11:00Z (status uncertain)"
     },
     {
-      "worker": "W3",
+      "worker": "W2",
       "fencing_token": 3,
       "at": "2026-10-20T00:10:00Z",
       "step": "hold",
       "result": "search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:12:00Z"
     },
     {
-      "worker": "W2",
+      "worker": "W3",
       "fencing_token": 2,
       "at": "2026-10-20T00:10:00Z",
       "step": "write_rejected",

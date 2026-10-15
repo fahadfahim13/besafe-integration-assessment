@@ -6,7 +6,7 @@
 | 2 | Reschedule applied | evt-B-201 applied from ServiceM8's current record | applied | PASS | Working |
 | 3 | Stale update | Late older evt-B-200 refused by version guard | stale | PASS | Working |
 | 4 | Duplicate event | Redelivered evt-B-201 is a no-op (version + content already applied) | duplicate | PASS | Working |
-| 5 | Simultaneous workers | Exactly one worker wins the lease | {'W2': 'WON token=2', 'W3': 'lost (lease held)'} | PASS | Working (real threads, SQLite) |
+| 5 | Simultaneous workers | Exactly one worker wins the lease | {'W3': 'WON token=2', 'W2': 'lost (lease held)'} | PASS | Working (real threads, SQLite) |
 | 6 | Stress | 1 winner in each of 20 rounds of 8 workers | 20/20 rounds | PASS | Working |
 | 7 | Fencing | Paused worker's late write with old token refused | REJECTED | PASS | Working |
 | 8 | Uncertain delivery | Timeout + crash -> not resent while search may lag; reconciled from search | 1 confirmation delivered, outbox sends=1 | PASS | Working (GHL simulated) |

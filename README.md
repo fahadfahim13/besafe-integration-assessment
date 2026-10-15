@@ -5,7 +5,7 @@ A runnable simulation of the assessment scenario. It covers two ServiceM8 jobs f
 All data is synthetic. No credentials, no production systems, no paid services and no former-client information are used.
 
 ```
-python -m unittest discover -s tests -t . -v    # 33 acceptance tests
+python -m unittest discover -s tests -t . -v    # 36 acceptance tests
 python run_demo.py                               # walkthrough + evidence/ (exit 0 = all checks pass)
 ```
 
@@ -32,10 +32,10 @@ Requires Python 3.11+ (standard library only; SQLite 3.35+ for `UPDATE ... RETUR
 | Uncertain delivery | Before **any** send, ServiceM8 is re-read: job not cancelled, same start time. Intent (`in_flight`) is committed **before** the GHL call. A timeout, or an `in_flight` row with an expired lease, becomes `uncertain`. It is never resent blind. | `_send`, `_recover` |
 | When resending is permitted | **All** must hold: (a) worker holds a current lease/token; (b) a provider search that **started** at or after `first_send_at + 15 min` (search-consistency window) finds no match; (c) the message is still true per a fresh ServiceM8 read; (d) no previous resend. Otherwise: hold with backoff, close as superseded, or open a review task. | `_recover` |
 | Missed Outlook reply | Graph notifications are a latency hint only. A delta query with a stored delta link is the completeness guarantee. Webhook and delta paths are idempotent with each other (`graph_id` primary key). | `sync_mailbox`, `ingest_mail` |
-| Queued follow-ups | (1) No dispatch while the mailbox watermark is older than 5 minutes. (2) No dispatch while the customer has a reply that is ingested but not yet processed or reviewed. (3) Processing a reply pauses follow-ups for **every** job it could refer to. (4) Reminders are delivered through the same outbox (idempotency key, lease, fencing, ServiceM8 re-check), so a crash cannot double-send one. (5) After review, only follow-ups paused by that reply resume, and only if no other reply is open; cancelled jobs' follow-ups are cancelled. | `dispatch_followups`, `process_inbound_emails`, `resolve_instruction` |
+| Queued follow-ups | (1) No dispatch while the mailbox watermark is older than 5 minutes. (2) No dispatch while the customer has a reply that is ingested but not yet processed or reviewed. (3) Processing a reply pauses follow-ups for **every** job it could refer to. (4) Reminders are delivered through the same outbox (idempotency key, lease, fencing, ServiceM8 re-check), so they get the same crash protection as confirmations, including the same provider-lag limit described below. (5) After review, follow-ups for the jobs being kept resume once the customer has no reply left open; cancelled jobs' follow-ups are cancelled. | `dispatch_followups`, `process_inbound_emails`, `resolve_instruction` |
 | Ambiguous instruction | "Cancel that one, keep the other" is resolved only through a deterministic signal: the reply's `In-Reply-To` matches the booking email for #1042. Even then it is a **suggestion**. With no thread reference (variant V4) it stays `AMBIGUOUS` and the reviewer is told to ask the customer. | `process_inbound_emails` |
 | AI validation | Type/schema check (malformed output or a model error is a rejection, never a crash), reference check (jobs must belong to this customer), contradiction check ("keep the other" vs cancelling every job), count check ("that one" means exactly one cancellation). Cancellation is destructive, so it always needs human approval whatever the confidence. | `validate_extraction` |
-| Human review | The task is claimed `open -> resolving` with a conditional update, so a double click cannot cancel twice. The decision must reference only the task's own candidate jobs. The ServiceM8 write sets absolute state, so it is safe to repeat; the store learns about it through the normal webhook. | `resolve_instruction` |
+| Human review | The task is claimed `open -> resolving` with a conditional update, so a second reviewer or a double click cannot act on it; a crash mid-resolution can be re-run by the same reviewer. The decision must reference only the task's own candidate jobs. The ServiceM8 write sets absolute state, so it is safe to repeat; the store learns about it through the normal webhook. | `resolve_instruction` |
 | Destination evidence | Snapshots of ServiceM8, the store and GHL at each stage; one event traced end to end; generated results table. | `evidence/` |
 
 ## Crash immediately before vs immediately after the external write
@@ -82,7 +82,7 @@ Tuning lever: lengthen the consistency window for customer-facing SMS, or set `M
 - `besafe_sim/providers.py`: simulated ServiceM8 / GHL / Outlook / AI
 - `besafe_sim/scenario.py`: the main scenario and variants V1-V5
 - `run_demo.py`: walkthrough + generated `evidence/`
-- `tests/test_assessment.py`: 33 acceptance tests, including a regression test for each issue found in an independent review of the first version
+- `tests/test_assessment.py`: 36 acceptance tests, including a regression test for each issue found in an independent review of the first version
 - `evidence/`: `run-output.txt`, `results.md`, `trace-evt-B-201.json`, `snapshots.json`, `variants.json`, `main-scenario.sqlite`
 
 ## Authorship

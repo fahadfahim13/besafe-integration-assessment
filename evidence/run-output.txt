@@ -6,11 +6,11 @@ TIMELINE
   [2026-10-20T00:04:00Z] evt-B-200 older update arriving late (edit_date 2026-10-20T00:01:00Z): stale
   [2026-10-20T00:05:00Z] evt-B-201 duplicate delivery: duplicate
   [2026-10-20T00:06:00Z] W1 sends confirmation; GHL accepts but times out; W1 crashes: CRASHED: W1 died after GHL timeout, outcome not saved
-  [2026-10-20T00:08:00Z] W2 and W3 race for the expired lease: {'W2': 'WON token=2', 'W3': 'lost (lease held)'}
-  [2026-10-20T00:08:00Z] W2 recovers: provider search: held
+  [2026-10-20T00:08:00Z] W2 and W3 race for the expired lease: {'W3': 'WON token=2', 'W2': 'lost (lease held)'}
+  [2026-10-20T00:08:00Z] W3 recovers: provider search: held
   [2026-10-20T00:09:00Z] W3 polls at 00:09 (inside backoff): nothing claimable
   [2026-10-20T00:10:00Z] second recovery pass at 00:10 (search still inside lag): held token=3
-  [2026-10-20T00:10:00Z] W2 (paused since 00:08) wakes late and writes with token 2: REJECTED: W2 write refused: token 2 is stale; current token 3
+  [2026-10-20T00:10:00Z] W3 (paused since 00:08) wakes late and writes with token 2: REJECTED: W3 write refused: token 2 is stale; current token 3
   [2026-10-20T00:20:00Z] mailbox delta sync before outage: watermark 00:20
   [2026-10-20T00:20:00Z] OUTAGE starts: Graph notifications and poller down
   [2026-10-20T00:22:00Z] recovery after search catches up: reconciled token=4
@@ -340,12 +340,12 @@ TRACE: evt-B-201 (job #1042 reschedule) from source event to destination
   attempt        : 2026-10-20T00:06:00Z W1  token=1 claim            lease until 2026-10-20T00:07:00Z (status pending)
   attempt        : 2026-10-20T00:06:00Z W1  token=1 send_start       send #1 -> GHL (ServiceM8 confirms job and start time)
   attempt        : 2026-10-20T00:06:00Z W1  token=1 crash            process died handling timeout: POST /conversations/messages: read timeout after 30s (request was accepted)
-  attempt        : 2026-10-20T00:08:00Z W2  token=2 claim            lease until 2026-10-20T00:09:00Z (status in_flight)
-  attempt        : 2026-10-20T00:08:00Z W2  token=2 recover          found in_flight with expired lease: previous worker died; outcome unknown -> uncertain
-  attempt        : 2026-10-20T00:08:00Z W2  token=2 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:10:00Z
-  attempt        : 2026-10-20T00:10:00Z W3  token=3 claim            lease until 2026-10-20T00:11:00Z (status uncertain)
-  attempt        : 2026-10-20T00:10:00Z W3  token=3 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:12:00Z
-  attempt        : 2026-10-20T00:10:00Z W2  token=2 write_rejected   token 2 is stale; current token 3
+  attempt        : 2026-10-20T00:08:00Z W3  token=2 claim            lease until 2026-10-20T00:09:00Z (status in_flight)
+  attempt        : 2026-10-20T00:08:00Z W3  token=2 recover          found in_flight with expired lease: previous worker died; outcome unknown -> uncertain
+  attempt        : 2026-10-20T00:08:00Z W3  token=2 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:10:00Z
+  attempt        : 2026-10-20T00:10:00Z W2  token=3 claim            lease until 2026-10-20T00:11:00Z (status uncertain)
+  attempt        : 2026-10-20T00:10:00Z W2  token=3 hold             search NOT FOUND but provider search may lag; resend forbidden until 2026-10-20T00:21:00Z; next check 2026-10-20T00:12:00Z
+  attempt        : 2026-10-20T00:10:00Z W3  token=2 write_rejected   token 2 is stale; current token 3
   attempt        : 2026-10-20T00:22:00Z W2  token=4 claim            lease until 2026-10-20T00:23:00Z (status uncertain)
   attempt        : 2026-10-20T00:22:00Z W2  token=4 reconcile        search FOUND ['ghl_msg_0004'] -> sent, no resend
   destination    : GHL ghl_msg_0004 at 2026-10-20T00:06:00Z (messages with this body: 1)
@@ -475,7 +475,7 @@ RESULTS
    2. PASS  Reschedule applied: applied
    3. PASS  Stale update: stale
    4. PASS  Duplicate event: duplicate
-   5. PASS  Simultaneous workers: {'W2': 'WON token=2', 'W3': 'lost (lease held)'}
+   5. PASS  Simultaneous workers: {'W3': 'WON token=2', 'W2': 'lost (lease held)'}
    6. PASS  Stress: 20/20 rounds
    7. PASS  Fencing: REJECTED
    8. PASS  Uncertain delivery: 1 confirmation delivered, outbox sends=1

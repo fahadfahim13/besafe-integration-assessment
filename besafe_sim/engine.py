@@ -169,14 +169,12 @@ def _apply_job(conn, clock, stored, current):
 
     if current["status"] == "Cancelled":
         _supersede_pending(conn, clock, uuid, "job cancelled")
-        conn.execute("UPDATE followups SET status='cancelled', reason='job cancelled' "
-                     "WHERE sm8_uuid=? AND status IN ('queued','paused')", (uuid,))
+        _cancel_followups(conn, uuid, "job cancelled")
         notes.append("pending messages superseded, follow-ups cancelled")
     elif current["start_at"] != stored["start_at"]:
         notes.append(f"start {stored['start_at']}->{current['start_at']}")
         _supersede_pending(conn, clock, uuid, f"superseded by schedule {current['start_at']}")
-        conn.execute("UPDATE followups SET status='cancelled', reason='rescheduled' "
-                     "WHERE sm8_uuid=? AND status IN ('queued','paused')", (uuid,))
+        _cancel_followups(conn, uuid, "rescheduled")
         _queue_reminder(conn, uuid, current["start_at"])
         contact = conn.execute("SELECT ghl_contact_id FROM customers WHERE id=?",
                                (stored["customer_id"],)).fetchone()[0]
@@ -193,6 +191,17 @@ def _enqueue(conn, clock, key, uuid, kind, contact, body, start_at):
         "INSERT OR IGNORE INTO outbox (idempotency_key, sm8_uuid, kind, contact_id, body, confirms_start_at, status,"
         " created_at, updated_at) VALUES (?,?,?,?,?,?,'pending',?,?)",
         (key, uuid, kind, contact, body, start_at, clock.now_iso(), clock.now_iso()))
+
+
+def _cancel_followups(conn, uuid, reason):
+    conn.execute("UPDATE followups SET status='cancelled', reason=? "
+                 "WHERE sm8_uuid=? AND status IN ('queued','paused')", (reason, uuid))
+    # A reminder already handed to the outbox but not yet sent was superseded
+    # with it; mark the follow-up cancelled so a later reschedule back to the
+    # same time can re-queue it.
+    conn.execute("UPDATE followups SET status='cancelled', reason=? WHERE sm8_uuid=? AND status='dispatched' "
+                 "AND EXISTS (SELECT 1 FROM outbox o WHERE o.kind='reminder' AND o.status='superseded' "
+                 "AND o.idempotency_key LIKE '%:f' || followups.id)", (reason, uuid))
 
 
 def _supersede_pending(conn, clock, uuid, reason):
@@ -564,9 +573,11 @@ def resolve_instruction(conn, clock, sm8, task_id, reviewer, cancel, keep):
     2. Validate the decision against the task's own candidate jobs.
     3. Write ServiceM8 (absolute state, safe to repeat). The local store
        learns about it through the normal webhook path.
-    4. Mark resolved; resume only follow-ups paused by THIS reply, and only
-       if the customer has no other reply still open.
-    A crash between 1 and 4 leaves the task 'resolving' (visible, re-runnable).
+    4. Mark resolved. Follow-ups for every candidate job not being cancelled
+       resume once the customer has no reply left open (pauses from several
+       replies are released by whichever is resolved last).
+    A crash between 1 and 4 leaves the task 'resolving'; the same reviewer
+    can re-run it (step 3 is safe to repeat).
     """
     task = conn.execute("SELECT * FROM review_tasks WHERE id=?", (task_id,)).fetchone()
     if task is None or task["kind"] != "customer_instruction":
@@ -574,8 +585,9 @@ def resolve_instruction(conn, clock, sm8, task_id, reviewer, cancel, keep):
     allowed = {c["sm8_uuid"] for c in json.loads(task["evidence"])["candidates"]}
     if not set(cancel) | set(keep) <= allowed or set(cancel) & set(keep):
         raise ReviewError("decision references jobs outside this task's candidates, or both cancels and keeps one")
-    cur = conn.execute("UPDATE review_tasks SET status='resolving', resolved_by=? WHERE id=? AND status='open'",
-                       (reviewer, task_id))
+    cur = conn.execute("UPDATE review_tasks SET status='resolving', resolved_by=:r WHERE id=:id "
+                       "AND (status='open' OR (status='resolving' AND resolved_by=:r))",
+                       dict(r=reviewer, id=task_id))
     if cur.rowcount != 1:
         raise ReviewError(f"task {task_id} is not open (status {task['status']})")
 
@@ -586,10 +598,9 @@ def resolve_instruction(conn, clock, sm8, task_id, reviewer, cancel, keep):
     conn.execute("UPDATE review_tasks SET status='resolved', resolution=?, resolved_at=? WHERE id=?",
                  (json.dumps(dict(cancel=cancel, keep=keep)), clock.now_iso(), task_id))
     conn.execute("UPDATE inbound_emails SET status='resolved' WHERE graph_id=?", (task["subject"],))
-    for uuid in keep:
+    for uuid in allowed - set(cancel):
         if not customer_has_open_reply(conn, uuid):
             conn.execute("UPDATE followups SET status='queued', reason='resumed after review' "
-                         "WHERE sm8_uuid=? AND status='paused' AND reason LIKE ?",
-                         (uuid, f"%{task['subject']}%"))
+                         "WHERE sm8_uuid=? AND status='paused'", (uuid,))
     db.audit(conn, clock, reviewer, "review_resolved", task["subject"], f"cancel={cancel} keep={keep}")
     conn.execute("COMMIT")

@@ -290,6 +290,51 @@ class ReviewFindings(Base):
         self.assertEqual(sum(1 for x in w.sm8.write_log if x["fields"].get("status") == "Cancelled"), 1)
         w.conn.close()
 
+    def test_two_open_replies_do_not_strand_followups(self):
+        w = scenario.World(self.path("n1.db"), log=lambda *_: None)
+        self.addCleanup(w.conn.close)
+        w.seed()
+        w.at(5)
+        engine.sync_mailbox(w.conn, w.clock, w.outlook)
+        w.outlook.receive(scenario.CUSTOMER["email"], "Re", "Cancel that one, keep the other.",
+                          in_reply_to="<booking-1042@besafe.example>")
+        w.outlook.receive(scenario.CUSTOMER["email"], "also", "Can the tech call before arriving?")
+        engine.process_inbound_emails(w.conn, w.clock, w.ai)
+        t1, t2 = [r[0] for r in w.conn.execute("SELECT id FROM review_tasks ORDER BY id")]
+        engine.resolve_instruction(w.conn, w.clock, w.sm8, t1, "rev", cancel=[JOB_B], keep=[JOB_A])
+        a = lambda: w.conn.execute("SELECT status FROM followups WHERE sm8_uuid=? AND status!='cancelled'",
+                                   (JOB_A,)).fetchone()[0]
+        self.assertEqual(a(), "paused")  # second reply still open
+        engine.resolve_instruction(w.conn, w.clock, w.sm8, t2, "rev", cancel=[], keep=[JOB_A])
+        self.assertEqual(a(), "queued")
+
+    def test_resolution_interrupted_after_claim_can_be_rerun(self):
+        ev = scenario.run_main(self.path("n2.db"), log=lambda *_: None)
+        w = ev["world"]
+        self.addCleanup(w.conn.close)
+        w.conn.execute("UPDATE review_tasks SET status='resolving', resolved_by='rev2' "
+                       "WHERE kind='customer_instruction'")
+        tid = w.conn.execute("SELECT id FROM review_tasks WHERE kind='customer_instruction'").fetchone()[0]
+        with self.assertRaises(engine.ReviewError):
+            engine.resolve_instruction(w.conn, w.clock, w.sm8, tid, "someone-else", cancel=[JOB_B], keep=[JOB_A])
+        engine.resolve_instruction(w.conn, w.clock, w.sm8, tid, "rev2", cancel=[JOB_B], keep=[JOB_A])
+        self.assertEqual(w.conn.execute("SELECT status FROM review_tasks WHERE id=?", (tid,)).fetchone()[0],
+                         "resolved")
+
+    def test_dispatched_reminder_requeued_after_reschedule_round_trip(self):
+        w = self._world("n3.db")
+        w.at(41)  # 00:40 reminder for #1042 is due
+        engine.sync_mailbox(w.conn, w.clock, w.outlook)
+        engine.dispatch_followups(w.conn, w.clock)
+        for minute, start in ((42, "2026-10-22T03:00:00Z"), (43, "2026-10-21T00:40:00Z")):
+            w.at(minute)
+            new = w.sm8.update_job(JOB_B, actor="office", start_at=start)
+            engine.ingest_sm8_event(w.conn, w.clock, w.sm8, w.ghl,
+                                    dict(event_id=f"evt-{minute}", object_uuid=JOB_B, edit_date=new["edit_date"]))
+        st = w.conn.execute("SELECT status FROM followups WHERE sm8_uuid=? AND due_at='2026-10-20T00:40:00Z'",
+                            (JOB_B,)).fetchone()[0]
+        self.assertEqual(st, "queued")
+
     def test_malformed_ai_output_is_rejected_not_crashed(self):
         for bad in (None, "cancel", dict(actions="cancel"), dict(actions=["x"]), dict(actions=[])):
             self.assertEqual(engine.validate_extraction("Cancel that one", bad, [dict(job_number="1")])[0],
