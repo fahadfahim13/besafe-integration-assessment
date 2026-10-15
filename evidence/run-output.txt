@@ -68,7 +68,7 @@ SNAPSHOT: 1_before   (sim time 2026-10-20T00:00:00Z)
     id           | name                               | stage    
     -------------+------------------------------------+----------
     ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
-    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Scheduled
 
   GHL messages (destination, simulated)
     (none)
@@ -124,7 +124,7 @@ SNAPSHOT: 2_after_failures_delivery   (sim time 2026-10-20T00:06:00Z)
     id           | name                               | stage    
     -------------+------------------------------------+----------
     ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
-    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Scheduled
 
   GHL messages (destination, simulated)
     id           | created_at           | body                                                            
@@ -182,7 +182,7 @@ SNAPSHOT: 3_after_failures_all   (sim time 2026-10-20T00:46:00Z)
     id           | name                               | stage    
     -------------+------------------------------------+----------
     ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
-    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Scheduled
 
   GHL messages (destination, simulated)
     id           | created_at           | body                                                            
@@ -248,7 +248,7 @@ SNAPSHOT: 4_after_automated_recovery   (sim time 2026-10-20T00:56:00Z)
     id           | name                               | stage    
     -------------+------------------------------------+----------
     ghl_opp_0002 | Job #1041 12 Harbour St, Manly NSW | Scheduled
-    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Cancelled
+    ghl_opp_0003 | Job #1042 7 Ridge Rd, Dee Why NSW  | Scheduled
 
   GHL messages (destination, simulated)
     id           | created_at           | body                                                            

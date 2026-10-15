@@ -5,8 +5,9 @@ A runnable simulation of the assessment scenario. It covers two ServiceM8 jobs f
 All data is synthetic. No credentials, no production systems, no paid services and no former-client information are used.
 
 ```
-python -m unittest discover -s tests -t . -v    # 36 acceptance tests
+python -m unittest discover -s tests -t . -v    # 37 acceptance tests
 python run_demo.py                               # walkthrough + evidence/ (exit 0 = all checks pass)
+python viewer.py                                 # browse the evidence at http://127.0.0.1:8765
 ```
 
 Requires Python 3.11+ (standard library only; SQLite 3.35+ for `UPDATE ... RETURNING`).
@@ -82,7 +83,8 @@ Tuning lever: lengthen the consistency window for customer-facing SMS, or set `M
 - `besafe_sim/providers.py`: simulated ServiceM8 / GHL / Outlook / AI
 - `besafe_sim/scenario.py`: the main scenario and variants V1-V5
 - `run_demo.py`: walkthrough + generated `evidence/`
-- `tests/test_assessment.py`: 36 acceptance tests, including a regression test for each issue found in an independent review of the first version
+- `viewer.py`: local evidence viewer (results, timeline, before/after snapshots with change highlighting, event trace, crash-point variants; buttons re-run the demo and the tests live)
+- `tests/test_assessment.py`: 37 acceptance tests, including a regression test for each issue found in an independent review of the first version
 - `evidence/`: `run-output.txt`, `results.md`, `trace-evt-B-201.json`, `snapshots.json`, `variants.json`, `main-scenario.sqlite`
 
 ## Authorship

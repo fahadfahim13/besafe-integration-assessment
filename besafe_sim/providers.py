@@ -159,9 +159,10 @@ class AIExtractor:
 
 
 def snapshot_ghl(ghl):
+    # Deep copies: a snapshot must not change when the provider changes later.
     return dict(
-        contacts=list(ghl.contacts.values()),
-        opportunities=list(ghl.opportunities.values()),
+        contacts=copy.deepcopy(list(ghl.contacts.values())),
+        opportunities=copy.deepcopy(list(ghl.opportunities.values())),
         messages=[{k: v for k, v in m.items() if not k.startswith("_")} for m in ghl.messages],
     )
 

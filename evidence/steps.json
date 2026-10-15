@@ -1,0 +1,172 @@
+[
+  {
+    "at": "2026-10-20T00:03:00Z",
+    "step": "evt-B-201 reschedule (edit_date 2026-10-20T00:02:00Z)",
+    "result": "applied"
+  },
+  {
+    "at": "2026-10-20T00:04:00Z",
+    "step": "evt-B-200 older update arriving late (edit_date 2026-10-20T00:01:00Z)",
+    "result": "stale"
+  },
+  {
+    "at": "2026-10-20T00:05:00Z",
+    "step": "evt-B-201 duplicate delivery",
+    "result": "duplicate"
+  },
+  {
+    "at": "2026-10-20T00:06:00Z",
+    "step": "W1 sends confirmation; GHL accepts but times out; W1 crashes",
+    "result": "CRASHED: W1 died after GHL timeout, outcome not saved"
+  },
+  {
+    "at": "2026-10-20T00:08:00Z",
+    "step": "W2 and W3 race for the expired lease",
+    "result": {
+      "W3": "WON token=2",
+      "W2": "lost (lease held)"
+    }
+  },
+  {
+    "at": "2026-10-20T00:08:00Z",
+    "step": "W3 recovers: provider search",
+    "result": "held"
+  },
+  {
+    "at": "2026-10-20T00:09:00Z",
+    "step": "W3 polls at 00:09 (inside backoff)",
+    "result": "nothing claimable"
+  },
+  {
+    "at": "2026-10-20T00:10:00Z",
+    "step": "second recovery pass at 00:10 (search still inside lag)",
+    "result": "held token=3"
+  },
+  {
+    "at": "2026-10-20T00:10:00Z",
+    "step": "W3 (paused since 00:08) wakes late and writes with token 2",
+    "result": "REJECTED: W3 write refused: token 2 is stale; current token 3"
+  },
+  {
+    "at": "2026-10-20T00:20:00Z",
+    "step": "mailbox delta sync before outage",
+    "result": "watermark 00:20"
+  },
+  {
+    "at": "2026-10-20T00:20:00Z",
+    "step": "OUTAGE starts",
+    "result": "Graph notifications and poller down"
+  },
+  {
+    "at": "2026-10-20T00:22:00Z",
+    "step": "recovery after search catches up",
+    "result": "reconciled token=4"
+  },
+  {
+    "at": "2026-10-20T00:25:00Z",
+    "step": "customer reply lands in shared mailbox",
+    "result": "AAMk_in_003; notification DROPPED"
+  },
+  {
+    "at": "2026-10-20T00:41:00Z",
+    "step": "follow-up dispatcher tick (reminder #1042 due 00:40)",
+    "result": [
+      [
+        3,
+        "held: mailbox stale"
+      ]
+    ]
+  },
+  {
+    "at": "2026-10-20T00:46:00Z",
+    "step": "follow-up dispatcher tick (reminder #1041 due 00:45)",
+    "result": [
+      [
+        1,
+        "held: mailbox stale"
+      ],
+      [
+        3,
+        "held: mailbox stale"
+      ]
+    ]
+  },
+  {
+    "at": "2026-10-20T00:55:00Z",
+    "step": "OUTAGE ends; delta poll",
+    "result": "recovered ['AAMk_in_003']"
+  },
+  {
+    "at": "2026-10-20T00:55:00Z",
+    "step": "follow-up dispatcher tick (mailbox fresh, reply not yet processed)",
+    "result": [
+      [
+        1,
+        "held: unprocessed reply"
+      ],
+      [
+        3,
+        "held: unprocessed reply"
+      ]
+    ]
+  },
+  {
+    "at": "2026-10-20T00:56:00Z",
+    "step": "process inbound reply (AI + validation)",
+    "result": [
+      {
+        "graph_id": "AAMk_in_003",
+        "verdict": "rejected",
+        "reasons": [
+          "contradiction: text says 'keep the other' but extraction cancels every job",
+          "count: 'that one' implies exactly 1 cancellation, extraction has 2",
+          "policy: cancellation is destructive -> human approval required"
+        ],
+        "suggestion": {
+          "cancel": [
+            "b2e1d4f3-1042-4c7f-8d22-0000000b1042"
+          ],
+          "keep": [
+            "a1f0c3e2-1041-4b6e-9c11-0000000a1041"
+          ],
+          "basis": "In-Reply-To <booking-1042@besafe.example> is the booking email for job 1042; 'keep the other' -> job 1041"
+        }
+      }
+    ]
+  },
+  {
+    "at": "2026-10-20T00:56:00Z",
+    "step": "follow-up dispatcher tick (after reply processed)",
+    "result": "nothing dispatched"
+  },
+  {
+    "at": "2026-10-20T00:56:00Z",
+    "step": "duplicate-delivery sweep",
+    "result": "none"
+  },
+  {
+    "at": "2026-10-20T01:00:00Z",
+    "step": "reviewer approves: cancel #1042, keep #1041",
+    "result": "ServiceM8 write issued"
+  },
+  {
+    "at": "2026-10-20T01:01:00Z",
+    "step": "evt-B-202 cancellation webhook",
+    "result": "applied"
+  },
+  {
+    "at": "2026-10-20T01:02:00Z",
+    "step": "follow-up dispatcher tick (after review)",
+    "result": [
+      [
+        1,
+        "dispatched to outbox"
+      ]
+    ]
+  },
+  {
+    "at": "2026-10-20T01:02:00Z",
+    "step": "outbox worker delivers the #1041 reminder",
+    "result": "sent token=1"
+  }
+]

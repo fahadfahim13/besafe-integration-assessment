@@ -209,6 +209,11 @@ def main():
                 f"\n\n**{passed}/{len(checks)} checks passed.**\n")
     with open(os.path.join(EVIDENCE, "trace-evt-B-201.json"), "w", encoding="utf-8") as f:
         json.dump(ev["trace"], f, indent=2, default=str)
+    with open(os.path.join(EVIDENCE, "steps.json"), "w", encoding="utf-8") as f:
+        json.dump(ev["steps"], f, indent=2, default=str)
+    with open(os.path.join(EVIDENCE, "results.json"), "w", encoding="utf-8") as f:
+        json.dump([dict(check=c[0], expected=c[1], observed=str(c[2]), passed=bool(c[3]), status=c[4])
+                   for c in checks], f, indent=2)
     with open(os.path.join(EVIDENCE, "snapshots.json"), "w", encoding="utf-8") as f:
         json.dump(ev["snapshots"], f, indent=2, default=str)
     with open(os.path.join(EVIDENCE, "variants.json"), "w", encoding="utf-8") as f:

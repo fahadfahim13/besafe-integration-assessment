@@ -83,7 +83,7 @@
           "contact_id": "ghl_contact_0001",
           "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
           "name": "Job #1042 7 Ridge Rd, Dee Why NSW",
-          "stage": "Cancelled"
+          "stage": "Scheduled"
         }
       ],
       "messages": []
@@ -219,7 +219,7 @@
           "contact_id": "ghl_contact_0001",
           "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
           "name": "Job #1042 7 Ridge Rd, Dee Why NSW",
-          "stage": "Cancelled"
+          "stage": "Scheduled"
         }
       ],
       "messages": [
@@ -362,7 +362,7 @@
           "contact_id": "ghl_contact_0001",
           "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
           "name": "Job #1042 7 Ridge Rd, Dee Why NSW",
-          "stage": "Cancelled"
+          "stage": "Scheduled"
         }
       ],
       "messages": [
@@ -534,7 +534,7 @@
           "contact_id": "ghl_contact_0001",
           "sm8_uuid": "b2e1d4f3-1042-4c7f-8d22-0000000b1042",
           "name": "Job #1042 7 Ridge Rd, Dee Why NSW",
-          "stage": "Cancelled"
+          "stage": "Scheduled"
         }
       ],
       "messages": [

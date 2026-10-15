@@ -1,0 +1,142 @@
+[
+  {
+    "check": "Job matching",
+    "expected": "Same email/phone -> 1 GHL contact; 2 opportunities keyed by ServiceM8 UUID",
+    "observed": "1 contact, 2 opportunities",
+    "passed": true,
+    "status": "Working (simulated providers)"
+  },
+  {
+    "check": "Reschedule applied",
+    "expected": "evt-B-201 applied from ServiceM8's current record",
+    "observed": "applied",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Stale update",
+    "expected": "Late older evt-B-200 refused by version guard",
+    "observed": "stale",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Duplicate event",
+    "expected": "Redelivered evt-B-201 is a no-op (version + content already applied)",
+    "observed": "duplicate",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Simultaneous workers",
+    "expected": "Exactly one worker wins the lease",
+    "observed": "{'W3': 'WON token=2', 'W2': 'lost (lease held)'}",
+    "passed": true,
+    "status": "Working (real threads, SQLite)"
+  },
+  {
+    "check": "Stress",
+    "expected": "1 winner in each of 20 rounds of 8 workers",
+    "observed": "20/20 rounds",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Fencing",
+    "expected": "Paused worker's late write with old token refused",
+    "observed": "REJECTED",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Uncertain delivery",
+    "expected": "Timeout + crash -> not resent while search may lag; reconciled from search",
+    "observed": "1 confirmation delivered, outbox sends=1",
+    "passed": true,
+    "status": "Working (GHL simulated)"
+  },
+  {
+    "check": "Resend condition",
+    "expected": "Crash before write: resend only after window + negative search",
+    "observed": "V1 delivered=1",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Crash after write",
+    "expected": "Reconciled from provider, no resend",
+    "observed": "V2 delivered=1",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Missed Outlook reply",
+    "expected": "Dropped notification recovered by Graph delta poll",
+    "observed": "delta",
+    "passed": true,
+    "status": "Working (Graph simulated)"
+  },
+  {
+    "check": "Follow-up control (outage)",
+    "expected": "Reminders held while mailbox watermark is stale",
+    "observed": "[[(3, 'held: mailbox stale')], [(1, 'held: mailbox stale'), (3, 'held: mailbox stale')]]",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Follow-up control (unprocessed reply)",
+    "expected": "Mailbox fresh but reply unprocessed -> still held",
+    "observed": "[(1, 'held: unprocessed reply'), (3, 'held: unprocessed reply')]",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Follow-up control (reply)",
+    "expected": "Reply pauses follow-ups for BOTH candidate jobs",
+    "observed": "['1041', '1042']",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "AI validation",
+    "expected": "High-confidence 'both cancelled' rejected",
+    "observed": "confidence 0.96 -> rejected",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Human review",
+    "expected": "No cancellation before approval",
+    "observed": "['Scheduled', 'Scheduled']",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Ambiguity",
+    "expected": "No thread reference -> ambiguous, no suggestion, no write",
+    "observed": "AMBIGUOUS: no thread reference; ask the ",
+    "passed": true,
+    "status": "Working"
+  },
+  {
+    "check": "Destination: ServiceM8",
+    "expected": "#1041 Scheduled, #1042 Cancelled",
+    "observed": "Scheduled / Cancelled",
+    "passed": true,
+    "status": "Simulated destination"
+  },
+  {
+    "check": "Destination: GHL",
+    "expected": "1 confirmation (#1042) + 1 reminder (#1041); #1042 opp Cancelled",
+    "observed": "1 conf, 1 reminder (#1041)",
+    "passed": true,
+    "status": "Simulated destination"
+  },
+  {
+    "check": "Unresolvable case",
+    "expected": "Provider lag beyond window -> duplicate detected + review task",
+    "observed": "V3 delivered=2, reviews=['duplicate_delivered']",
+    "passed": true,
+    "status": "Working: detected, NOT prevented"
+  }
+]

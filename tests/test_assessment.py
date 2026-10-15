@@ -127,6 +127,12 @@ class MainScenario(Base):
         self.assertEqual(len(reminders), 1)
         self.assertIn("#1041", reminders[0]["body"])
 
+    def test_snapshots_are_frozen_in_time(self):
+        before = self.ev["snapshots"]["1_before"]["ghl"]["opportunities"]
+        self.assertEqual({o["stage"] for o in before}, {"Scheduled"})
+        after = self.ev["snapshots"]["5_after_human_review"]["ghl"]["opportunities"]
+        self.assertIn("Cancelled", {o["stage"] for o in after})
+
     def test_trace_links_event_to_destination(self):
         t = self.ev["trace"]
         self.assertEqual(t["source_event"]["outcome"], "applied")
