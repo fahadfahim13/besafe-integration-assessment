@@ -3,3 +3,7 @@ __pycache__/
 *.db
 *.db-wal
 *.db-shm
+video/
+
+.vercel
+.env*.local

@@ -16,7 +16,8 @@ from besafe_sim import scenario
 from besafe_sim.scenario import JOB_A, JOB_B
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-EVIDENCE = os.path.join(HERE, "evidence")
+# Overridable so a read-only deployment can write its run to /tmp.
+EVIDENCE = os.environ.get("BESAFE_EVIDENCE_DIR") or os.path.join(HERE, "evidence")
 OUT = []
 UNPROC = "follow-up dispatcher tick (mailbox fresh, reply not yet processed)"
 

@@ -2,6 +2,8 @@
 
 A runnable simulation of the assessment scenario. It covers two ServiceM8 jobs for one customer, late and duplicate events, a GHL timeout followed by a worker crash, racing workers, a missed Outlook reply, and a confidently wrong AI extraction. It records the state before processing, after the failures and after recovery.
 
+**Live:** https://besafe-assessment.vercel.app — the recorded walkthrough, every snapshot, the event trace and the crash-point variants. The **Run tests** and **Re-run demo** buttons execute this code on the server.
+
 All data is synthetic. No credentials, no production systems, no paid services and no former-client information are used.
 
 ```
@@ -83,6 +85,7 @@ Tuning lever: lengthen the consistency window for customer-facing SMS, or set `M
 - `besafe_sim/providers.py`: simulated ServiceM8 / GHL / Outlook / AI
 - `besafe_sim/scenario.py`: the main scenario and variants V1-V5
 - `run_demo.py`: walkthrough + generated `evidence/`
+- `api/index.py`, `vercel.json`: hosted copy of the viewer (same `Handler`; live runs write to `/tmp`)
 - `viewer.py`: local evidence viewer (results, timeline, before/after snapshots with change highlighting, event trace, crash-point variants; buttons re-run the demo and the tests live)
 - `tests/test_assessment.py`: 37 acceptance tests, including a regression test for each issue found in an independent review of the first version
 - `evidence/`: `run-output.txt`, `results.md`, `trace-evt-B-201.json`, `snapshots.json`, `variants.json`, `main-scenario.sqlite`

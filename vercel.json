@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "includeFiles": ["besafe_sim/**", "tests/**", "evidence/**", "run_demo.py", "viewer.py"] }
+    },
+    { "src": "video/*", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/video/(walkthrough.mp4|poster.jpg)", "dest": "/video/$1" },
+    { "src": "/(.*)", "dest": "/api/index.py" }
+  ]
+}

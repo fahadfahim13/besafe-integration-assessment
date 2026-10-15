@@ -4,7 +4,8 @@
 
 Reads evidence/ written by run_demo.py. The "Re-run demo" and "Run tests"
 buttons execute the real scripts and show their raw output. Standard library
-only; binds to localhost.
+only; binds to localhost. The same Handler serves the hosted copy
+(api/index.py on Vercel), where live runs write to /tmp.
 """
 
 import json
@@ -15,23 +16,29 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EVIDENCE = os.path.join(HERE, "evidence")
+RUN_DIR = os.path.join("/tmp", "besafe-evidence") if os.environ.get("VERCEL") else EVIDENCE
+VIDEO = os.path.join(HERE, "video", "walkthrough.mp4")
 PORT = int(os.environ.get("PORT", "8765"))
 
 
-def load(name):
-    with open(os.path.join(EVIDENCE, name), encoding="utf-8") as f:
+def load(folder, name):
+    with open(os.path.join(folder, name), encoding="utf-8") as f:
         return json.load(f)
 
 
-def evidence():
-    if not os.path.exists(os.path.join(EVIDENCE, "results.json")):
+def evidence(folder=None):
+    folder = folder or EVIDENCE
+    if not os.path.exists(os.path.join(folder, "results.json")):
         run([sys.executable, "run_demo.py"])
-    return dict(results=load("results.json"), steps=load("steps.json"), snapshots=load("snapshots.json"),
-                trace=load("trace-evt-B-201.json"), variants=load("variants.json"))
+        folder = RUN_DIR
+    return dict(results=load(folder, "results.json"), steps=load(folder, "steps.json"),
+                snapshots=load(folder, "snapshots.json"), trace=load(folder, "trace-evt-B-201.json"),
+                variants=load(folder, "variants.json"))
 
 
 def run(cmd):
-    p = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    env = dict(os.environ, BESAFE_EVIDENCE_DIR=RUN_DIR, PYTHONDONTWRITEBYTECODE="1")
+    p = subprocess.run(cmd, cwd=HERE, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")
     return dict(cmd=" ".join(cmd[1:]), exit=p.returncode, output=(p.stdout + p.stderr)[-60000:])
 
 
@@ -45,18 +52,34 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _route(self):
+        return self.path.split("?")[0].replace("/api/index", "") or "/"
+
     def do_GET(self):
-        if self.path == "/":
+        path = self._route()
+        if path == "/":
             self._send(200, PAGE, "text/html; charset=utf-8")
-        elif self.path == "/api/evidence":
+        elif path == "/api/evidence":
             self._send(200, json.dumps(evidence(), default=str), "application/json")
+        elif path in ("/video/walkthrough.mp4", "/video/poster.jpg") and os.path.exists(HERE + path):
+            with open(HERE + path, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "video/mp4" if path.endswith(".mp4") else "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
         else:
             self._send(404, "not found", "text/plain")
 
     def do_POST(self):
-        if self.path == "/api/run-demo":
-            self._send(200, json.dumps(run([sys.executable, "run_demo.py"])), "application/json")
-        elif self.path == "/api/run-tests":
+        path = self._route()
+        if path == "/api/run-demo":
+            result = run([sys.executable, "run_demo.py"])
+            if result["exit"] == 0:
+                result["evidence"] = evidence(RUN_DIR)
+            self._send(200, json.dumps(result, default=str), "application/json")
+        elif path == "/api/run-tests":
             self._send(200, json.dumps(run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", ".",
                                             "-v"])), "application/json")
         else:
@@ -107,7 +130,7 @@ pre{font-family:var(--mono);font-size:12.5px;background:#0f1522;color:#d7deea;pa
 <div class="sp"></div><button id="btnTests">Run tests</button><button class="primary" id="btnDemo">Re-run demo</button></header>
 <nav id="nav"></nav><main id="main"></main>
 <script>
-const TABS=[["overview","Overview & results"],["timeline","Timeline"],["snapshots","Before / after snapshots"],["trace","Event trace"],["variants","Crash points & limits"],["console","Console"]];
+const TABS=[["video","Walkthrough video"],["overview","Overview & results"],["timeline","Timeline"],["snapshots","Before / after snapshots"],["trace","Event trace"],["variants","Crash points & limits"],["console","Console"]];
 const STAGES={"1_before":"1 · Before processing","2_after_failures_delivery":"2 · After timeout + crash","3_after_failures_all":"3 · After all failures (outage)","4_after_automated_recovery":"4 · After automated recovery","5_after_human_review":"5 · After human review"};
 const KEYS={servicem8_jobs:"job_number",store_jobs:"job_number",inbound_events:"event_id",outbox:"id",followups:"id",mailbox_cursor:"mailbox",inbound_emails:"graph_id",ai_extractions:"graph_id",review_tasks:"id",contacts:"id",opportunities:"id",messages:"id",outlook_dropped_notifications:"graph_id"};
 let D=null,stage="1_before",consoleOut="Press “Run tests” or “Re-run demo”.";
@@ -165,13 +188,15 @@ function variants(){const V=D.variants.variants;
  `<div class="card"><h2>V4 · Same reply with no thread reference</h2><div>Suggestion: <b>${esc(typeof D.variants.ambiguous.task_evidence.suggestion==="string"?D.variants.ambiguous.task_evidence.suggestion:JSON.stringify(D.variants.ambiguous.task_evidence.suggestion))}</b></div>
  <div>Follow-ups paused: ${D.variants.ambiguous.paused.length} · ServiceM8 writes: ${D.variants.ambiguous.sm8_writes.length}</div></div>
  <div class="card"><h2>V5 · 8 workers claim the same row simultaneously, 20 rounds</h2><div>Winners per round: <span class="m">${D.variants.stress.map(s=>s.winners.length).join(" ")}</span></div></div>`}
+function video(){return `<div class="card"><h2>Recorded walkthrough (11 min)</h2><video controls preload="metadata" style="width:100%;max-height:78vh;background:#000;border-radius:8px" poster="/video/poster.jpg" src="/video/walkthrough.mp4"></video>
+ <div class="legend" style="margin-top:8px">Everything in the video can be re-run here: <b>Run tests</b> and <b>Re-run demo</b> (top right) execute the real code on this server.</div></div>`}
 function con(){return `<div class="card"><h2>Console</h2><pre id="out">${esc(consoleOut)}</pre></div>`}
-function render(){$("#main").innerHTML=`<section id="overview">${overview()}</section><section id="timeline">${timeline()}</section><section id="snapshots">${snapshots()}</section><section id="trace">${trace()}</section><section id="variants">${variants()}</section><section id="console">${con()}</section>`;
+function render(){$("#main").innerHTML=`<section id="video">${video()}</section><section id="overview">${overview()}</section><section id="timeline">${timeline()}</section><section id="snapshots">${snapshots()}</section><section id="trace">${trace()}</section><section id="variants">${variants()}</section><section id="console">${con()}</section>`;
  document.querySelectorAll(".stages button").forEach(b=>b.onclick=()=>{stage=b.dataset.s;render();show("snapshots")});
- show(((location.hash||"#overview").slice(1)).split("/")[0])}
+ show(((location.hash||"#video").slice(1)).split("/")[0])}
 async function load(){D=await (await fetch("/api/evidence")).json();const h=location.hash.slice(1).split("/");if(h[0]==="snapshots"&&STAGES[h[1]])stage=h[1];render();if(h[1])show(h[0])}
 async function act(path,btn){const bs=document.querySelectorAll("header button");bs.forEach(b=>b.disabled=true);consoleOut="Running "+path+" …";render();show("console");
- try{const r=await (await fetch(path,{method:"POST"})).json();consoleOut=`$ python ${r.cmd}\nexit code ${r.exit}\n\n${r.output}`;if(path==="/api/run-demo")D=await (await fetch("/api/evidence")).json()}
+ try{const r=await (await fetch(path,{method:"POST"})).json();consoleOut=`$ python ${r.cmd}\nexit code ${r.exit}\n\n${r.output}`;if(r.evidence)D=r.evidence}
  catch(e){consoleOut="Error: "+e}bs.forEach(b=>b.disabled=false);render();show("console");const o=$("#out");o.scrollTop=o.scrollHeight}
 $("#btnDemo").onclick=()=>act("/api/run-demo");$("#btnTests").onclick=()=>act("/api/run-tests");nav();load();
 </script></body></html>"""
